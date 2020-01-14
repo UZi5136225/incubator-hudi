@@ -50,7 +50,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 Schema valueSchema = schema.getValueType();
                 Map<String, Object> mapRes = new HashMap<String, Object>();
                 for (Map.Entry<String, Object> v : ((Map<String, Object>) value).entrySet()) {
@@ -79,7 +79,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 if (value instanceof Boolean) {
                     return Pair.of(true, value);
                 }
@@ -92,7 +92,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 if (value instanceof Number) {
                     return Pair.of(true, ((Number) value).intValue());
                 } else if (value instanceof String) {
@@ -107,7 +107,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 if (value instanceof Number) {
                     return Pair.of(true, ((Number) value).doubleValue());
                 } else if (value instanceof String) {
@@ -122,7 +122,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 if (value instanceof Number) {
                     return Pair.of(true, ((Number) value).floatValue());
                 } else if (value instanceof String) {
@@ -137,7 +137,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 if (value instanceof Number) {
                     return Pair.of(true, ((Number) value).longValue());
                 } else if (value instanceof String) {
@@ -152,7 +152,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 return Pair.of(true, value.toString());
             }
         };
@@ -162,7 +162,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 return Pair.of(true, value.toString().getBytes());
             }
         };
@@ -172,7 +172,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 byte[] src = value.toString().getBytes();
                 byte[] dst = new byte[schema.getFixedSize()];
                 System.arraycopy(src, 0, dst, 0, Math.min(schema.getFixedSize(), src.length));
@@ -185,11 +185,11 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 if (schema.getEnumSymbols().contains(value.toString())) {
                     return Pair.of(true, new GenericData.EnumSymbol(schema, value.toString()));
                 }
-                throw new HoodieJsonToAvroConversionException(String.format("Symbol %s not in enum", value.toString()),
+                throw new HoodieTextToAvroConversionException(String.format("Symbol %s not in enum", value.toString()),
                         schema.getFullName(), schema);
             }
         };
@@ -199,7 +199,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 GenericRecord result = new GenericData.Record(schema);
                 //TODO
                 return Pair.of(true, convertTextToAvro(String.valueOf(value), schema));
@@ -211,7 +211,7 @@ public class TextConverter {
         return new TextToAvroFieldProcessor() {
             @Override
             public Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                    throws HoodieJsonToAvroConversionException {
+                    throws HoodieTextToAvroConversionException {
                 Schema elementSchema = schema.getElementType();
                 List listRes = new ArrayList();
                 for (Object v : (List) value) {
@@ -247,7 +247,7 @@ public class TextConverter {
             }
         } else if (value == null) {
             // Always fail on null for non-nullable schemas
-            throw new HoodieJsonToAvroConversionException(null, name, schema);
+            throw new HoodieTextToAvroConversionException(null, name, schema);
         }
 
         TextToAvroFieldProcessor processor = FIELD_TYPE_PROCESSORS.get(schema.getType());
@@ -274,21 +274,21 @@ public class TextConverter {
         public Object convertToAvro(Object value, String name, Schema schema) {
             Pair<Boolean, Object> res = convert(value, name, schema);
             if (!res.getLeft()) {
-                throw new HoodieJsonToAvroConversionException(value, name, schema);
+                throw new HoodieTextToAvroConversionException(value, name, schema);
             }
             return res.getRight();
         }
 
         protected abstract Pair<Boolean, Object> convert(Object value, String name, Schema schema)
-                throws HoodieJsonToAvroConversionException;
+                throws HoodieTextToAvroConversionException;
     }
 
-    public static class HoodieJsonToAvroConversionException extends HoodieException {
+    public static class HoodieTextToAvroConversionException extends HoodieException {
         private Object value;
         private String fieldName;
         private Schema schema;
 
-        public HoodieJsonToAvroConversionException(Object value, String fieldName, Schema schema) {
+        public HoodieTextToAvroConversionException(Object value, String fieldName, Schema schema) {
             this.value = value;
             this.fieldName = fieldName;
             this.schema = schema;
