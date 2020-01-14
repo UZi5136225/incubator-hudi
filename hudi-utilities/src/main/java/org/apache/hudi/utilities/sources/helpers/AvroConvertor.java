@@ -24,6 +24,7 @@ import com.twitter.bijection.Injection;
 import com.twitter.bijection.avro.GenericAvroCodecs;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.hudi.avro.TextConverter;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -46,6 +47,7 @@ public class AvroConvertor implements Serializable {
    */
   private transient MercifulJsonConverter jsonConverter;
 
+  private transient TextConverter textConverter;
 
   /**
    * To be lazily inited on executors.
@@ -80,10 +82,23 @@ public class AvroConvertor implements Serializable {
     }
   }
 
+  private void initTextConvertor() {
+    if (textConverter == null) {
+      textConverter = new TextConverter();
+    }
+  }
+
   public GenericRecord fromJson(String json) throws IOException {
     initSchema();
     initJsonConvertor();
     return jsonConverter.convert(json, schema);
+  }
+
+
+  public GenericRecord fromText(String line) throws IOException {
+    initSchema();
+    initTextConvertor();
+    return textConverter.convert(line, schema);
   }
 
   public Schema getSchema() {

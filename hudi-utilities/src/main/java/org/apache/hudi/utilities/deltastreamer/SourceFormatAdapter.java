@@ -20,11 +20,7 @@ package org.apache.hudi.utilities.deltastreamer;
 
 import org.apache.hudi.AvroConversionUtils;
 import org.apache.hudi.common.util.Option;
-import org.apache.hudi.utilities.sources.AvroSource;
-import org.apache.hudi.utilities.sources.InputBatch;
-import org.apache.hudi.utilities.sources.JsonSource;
-import org.apache.hudi.utilities.sources.RowSource;
-import org.apache.hudi.utilities.sources.Source;
+import org.apache.hudi.utilities.sources.*;
 import org.apache.hudi.utilities.sources.helpers.AvroConvertor;
 
 import org.apache.avro.Schema;
@@ -66,6 +62,12 @@ public final class SourceFormatAdapter {
         return new InputBatch<>(Option.ofNullable(r.getBatch().map(
             rdd -> (AvroConversionUtils.createRdd(rdd, HOODIE_RECORD_STRUCT_NAME, HOODIE_RECORD_NAMESPACE).toJavaRDD()))
             .orElse(null)), r.getCheckpointForNextBatch(), r.getSchemaProvider());
+      }
+      case TEXT: {
+        InputBatch<JavaRDD<String>> r = ((TextSource) source).fetchNext(lastCkptStr, sourceLimit);
+        AvroConvertor convertor = new AvroConvertor(r.getSchemaProvider().getSourceSchema());
+        return new InputBatch<>(Option.ofNullable(r.getBatch().map(rdd -> rdd.map(convertor::fromText)).orElse(null)),
+                r.getCheckpointForNextBatch(), r.getSchemaProvider());
       }
       default:
         throw new IllegalArgumentException("Unknown source type (" + source.getSourceType() + ")");
