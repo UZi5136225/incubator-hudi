@@ -18,6 +18,7 @@
 
 package org.apache.hudi.utilities;
 
+import org.apache.hudi.DataSourceUtils;
 import org.apache.hudi.client.SparkRDDWriteClient;
 import org.apache.hudi.client.WriteStatus;
 import org.apache.hudi.client.common.HoodieEngineContext;
@@ -43,6 +44,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hudi.keygen.KeyGenerator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.parquet.avro.AvroReadSupport;
@@ -80,11 +82,13 @@ public class HDFSParquetImporter implements Serializable {
    */
   private TypedProperties props;
 
+  private KeyGenerator keyGenerator;
+
   public HDFSParquetImporter(Config cfg) {
     this.cfg = cfg;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     final Config cfg = new Config();
     JCommander cmd = new JCommander(cfg, null, args);
     if (cfg.help || args.length == 0) {
@@ -106,10 +110,11 @@ public class HDFSParquetImporter implements Serializable {
     return "upsert".equals(cfg.command.toLowerCase());
   }
 
-  public int dataImport(JavaSparkContext jsc, int retry) {
+  public int dataImport(JavaSparkContext jsc, int retry) throws IOException {
     this.fs = FSUtils.getFs(cfg.targetPath, jsc.hadoopConfiguration());
     this.props = cfg.propsFilePath == null ? UtilHelpers.buildProperties(cfg.configs)
         : UtilHelpers.readConfig(fs, new Path(cfg.propsFilePath), cfg.configs).getConfig();
+    this.keyGenerator = DataSourceUtils.createKeyGenerator(props);
     LOG.info("Starting data import with configs : " + props.toString());
     int ret = -1;
     try {
@@ -175,25 +180,8 @@ public class HDFSParquetImporter implements Serializable {
         // To reduce large number of tasks.
         .coalesce(16 * cfg.parallelism).map(entry -> {
           GenericRecord genericRecord = ((Tuple2<Void, GenericRecord>) entry)._2();
-          Object partitionField = genericRecord.get(cfg.partitionKey);
-          if (partitionField == null) {
-            throw new HoodieIOException("partition key is missing. :" + cfg.partitionKey);
-          }
-          Object rowField = genericRecord.get(cfg.rowKey);
-          if (rowField == null) {
-            throw new HoodieIOException("row field is missing. :" + cfg.rowKey);
-          }
-          String partitionPath = partitionField.toString();
-          LOG.debug("Row Key : " + rowField + ", Partition Path is (" + partitionPath + ")");
-          if (partitionField instanceof Number) {
-            try {
-              long ts = (long) (Double.parseDouble(partitionField.toString()) * 1000L);
-              partitionPath = PARTITION_FORMATTER.format(Instant.ofEpochMilli(ts));
-            } catch (NumberFormatException nfe) {
-              LOG.warn("Unable to parse date from partition field. Assuming partition as (" + partitionField + ")");
-            }
-          }
-          return new HoodieRecord<>(new HoodieKey(rowField.toString(), partitionPath),
+
+          return new HoodieRecord<>(keyGenerator.getKey(genericRecord),
               new HoodieJsonPayload(genericRecord.toString()));
         });
   }
@@ -261,10 +249,6 @@ public class HDFSParquetImporter implements Serializable {
     public String tableName = null;
     @Parameter(names = {"--table-type", "-tt"}, description = "Table type", required = true)
     public String tableType = null;
-    @Parameter(names = {"--row-key-field", "-rk"}, description = "Row key field name", required = true)
-    public String rowKey = null;
-    @Parameter(names = {"--partition-key-field", "-pk"}, description = "Partition key field name", required = true)
-    public String partitionKey = null;
     @Parameter(names = {"--parallelism", "-pl"}, description = "Parallelism for hoodie insert(default)/upsert/bulkinsert", required = true)
     public int parallelism = 1;
     @Parameter(names = {"--schema-file", "-sf"}, description = "path for Avro schema file", required = true)
