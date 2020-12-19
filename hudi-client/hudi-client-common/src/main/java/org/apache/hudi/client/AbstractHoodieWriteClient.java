@@ -185,8 +185,7 @@ public abstract class AbstractHoodieWriteClient<T extends HoodieRecordPayload, I
       emitCommitMetrics(instantTime, metadata, commitActionType);
       LOG.info("Committed " + instantTime);
     } catch (IOException e) {
-      throw new HoodieCommitException("Failed to complete commit " + config.getBasePath() + " at time " + instantTime,
-          e);
+      throw new HoodieCommitException("Failed to complete commit " + config.getBasePath() + " at time " + instantTime, e);
     }
 
     // callback if needed.

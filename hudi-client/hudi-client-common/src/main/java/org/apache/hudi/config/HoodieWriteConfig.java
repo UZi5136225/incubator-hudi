@@ -98,9 +98,7 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
   public static final String BULKINSERT_SORT_MODE = "hoodie.bulkinsert.sort.mode";
   public static final String DEFAULT_BULKINSERT_SORT_MODE = BulkInsertSortMode.GLOBAL_SORT
       .toString();
-  public static final String DELETE_MARKER_FIELD_PROP = "hoodie.write.delete.marker.field";
-  public static final String DEFAULT_DELETE_MARKER_FIELD = "_hoodie_is_deleted";
-
+  
   public static final String UPDATE_PARTIAL_FIELDS = "hoodie.update.partial.fields";
   public static final String DEFAULT_UPDATE_PARTIAL_FIELDS = "false";
 
@@ -317,10 +315,6 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
 
   public EngineType getEngineType() {
     return engineType;
-  }
-
-  public String getDeleteMarkerField() {
-    return props.getProperty(DELETE_MARKER_FIELD_PROP);
   }
 
   public Boolean updatePartialFields() {

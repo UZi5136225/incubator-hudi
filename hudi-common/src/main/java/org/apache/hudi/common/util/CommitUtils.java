@@ -77,7 +77,7 @@ public class CommitUtils {
         TableSchemaResolver resolver = new TableSchemaResolver(metaClient);
         schemaToStoreInCommit = resolver.getTableAvroSchemaWithoutMetadataFields().toString();
       } catch (Exception e) {
-        // ignore exception.
+        LOG.error("Resolver last schema fail!");
       }
     }
     commitMetadata.addMetadata(HoodieCommitMetadata.SCHEMA_KEY, schemaToStoreInCommit);
