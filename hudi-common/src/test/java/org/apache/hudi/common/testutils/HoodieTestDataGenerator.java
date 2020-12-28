@@ -123,8 +123,8 @@ public class HoodieTestDataGenerator {
       + "{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"_row_key\",\"type\":\"string\"},{\"name\":\"rider\",\"type\":\"string\"},"
       + "{\"name\":\"driver\",\"type\":\"string\"},{\"name\":\"fare\",\"type\":\"double\"},{\"name\": \"_hoodie_is_deleted\", \"type\": \"boolean\", \"default\": false}]}";
 
-  public static final String PARTIAL_TRIP_SCHEMA = "{\"type\":\"record\",\"name\":\"partialTripUberRec\",\"fields\":["
-          + "{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"_row_key\",\"type\":\"string\"}]}";
+  public static final String PARTIAL_TRIP_SCHEMA = "{\"type\":\"record\",\"name\":\"tripUberRec\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"_row_key\",\"type\":\"string\"}," +
+          "{\"name\":\"rider\",\"type\":\"string\"},{\"name\":\"driver\",\"type\":\"string\"}]}";
 
   public static final String NULL_SCHEMA = Schema.create(Schema.Type.NULL).toString();
   public static final String TRIP_HIVE_COLUMN_TYPES = "bigint,string,string,string,double,double,double,double,int,bigint,float,binary,int,bigint,decimal(10,6),"
@@ -183,6 +183,8 @@ public class HoodieTestDataGenerator {
       return generatePayloadForTripSchema(key, commitTime);
     } else if (SHORT_TRIP_SCHEMA.equals(schemaStr)) {
       return generatePayloadForShortTripSchema(key, commitTime);
+    } else if (PARTIAL_TRIP_SCHEMA.equals(schemaStr)) {
+      return generatePayloadForPartialTripSchema(key, commitTime);
     }
     return null;
   }
@@ -225,18 +227,23 @@ public class HoodieTestDataGenerator {
     return new RawTripTestPayload(rec.toString(), key.getRecordKey(), key.getPartitionPath(), TRIP_SCHEMA);
   }
 
+  public RawTripTestPayload generatePayloadForPartialTripSchema(HoodieKey key, String commitTime) throws IOException {
+    GenericRecord rec = generateRecordForPartialTripSchema(key.getRecordKey(), "rider-" + commitTime, "driver-" + commitTime, 0);
+    return new RawTripTestPayload(rec.toString(), key.getRecordKey(), key.getPartitionPath(), PARTIAL_TRIP_SCHEMA);
+  }
+
   public RawTripTestPayload generatePayloadForShortTripSchema(HoodieKey key, String commitTime) throws IOException {
     GenericRecord rec = generateRecordForShortTripSchema(key.getRecordKey(), "rider-" + commitTime, "driver-" + commitTime, 0);
     return new RawTripTestPayload(rec.toString(), key.getRecordKey(), key.getPartitionPath(), SHORT_TRIP_SCHEMA);
   }
 
   public PartialUpdatePayload generatePartialUpdatePayloadForTripSchema(HoodieKey key, String commitTime) {
-    GenericRecord rec = generateRecordForTripSchema(key.getRecordKey(), "rider-" + commitTime, "driver-" + commitTime, 0L);
+    GenericRecord rec = generateRecordForTripSchema(key.getRecordKey(), "rider-" + commitTime, "driver-" + commitTime, 0);
     return new PartialUpdatePayload(rec, 0);
   }
 
   public PartialUpdatePayload generatePartialUpdatePayloadForPartialTripSchema(HoodieKey key, String commitTime) {
-    GenericRecord rec = generateRecordForPartialTripSchema(key.getRecordKey(), 1L);
+    GenericRecord rec = generateRecordForPartialTripSchema(key.getRecordKey(), "rider-" + commitTime, "driver-" + commitTime, 1L);
     return new PartialUpdatePayload(rec, 0);
   }
 
@@ -332,10 +339,12 @@ public class HoodieTestDataGenerator {
     return rec;
   }
 
-  public GenericRecord generateRecordForPartialTripSchema(String rowKey, long timestamp) {
+  public GenericRecord generateRecordForPartialTripSchema(String rowKey, String riderName, String driverName, long timestamp) {
     GenericRecord rec = new GenericData.Record(PARTIAL_AVRO_TRIP_SCHEMA);
     rec.put("_row_key", rowKey);
     rec.put("timestamp", timestamp);
+    rec.put("rider", riderName);
+    rec.put("driver", driverName);
     return rec;
   }
 
@@ -493,7 +502,7 @@ public class HoodieTestDataGenerator {
       if (containsAllPartitions && i < partitionPaths.length) {
         partitionPath = partitionPaths[i];
       }
-      HoodieKey key = new HoodieKey(recordKeySupplier.get(), partitionPath);
+      HoodieKey key = new HoodieKey(i.toString(), partitionPath);
       KeyPartition kp = new KeyPartition();
       kp.key = key;
       kp.partitionPath = partitionPath;

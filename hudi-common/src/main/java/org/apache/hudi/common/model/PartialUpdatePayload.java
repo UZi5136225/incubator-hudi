@@ -19,16 +19,24 @@
 package org.apache.hudi.common.model;
 
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.IndexedRecord;
+import org.apache.avro.io.BinaryDecoder;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.hudi.avro.HoodieAvroUtils;
 import org.apache.hudi.common.util.Option;
 
 import java.io.IOException;
 import java.util.List;
 
 public class PartialUpdatePayload extends OverwriteWithLatestAvroPayload {
+
+  private Schema writeSchema;
+
   public PartialUpdatePayload(GenericRecord record, Comparable orderingVal) {
     super(record, orderingVal);
+    this.writeSchema = record.getSchema();
   }
 
   public PartialUpdatePayload(Option<GenericRecord> record) {
@@ -36,13 +44,13 @@ public class PartialUpdatePayload extends OverwriteWithLatestAvroPayload {
   }
 
   @Override
-  public Option<IndexedRecord> combineAndGetUpdateValue(IndexedRecord currentValue, Schema schema) throws IOException {
-    Option<IndexedRecord> recordOption = getInsertValue(schema);
+  public Option<IndexedRecord> combineAndGetUpdateValue(IndexedRecord currentValue, Schema readSchema) throws IOException {
+    Option<IndexedRecord> recordOption = getInsertValue(writeSchema);
     if (recordOption.isPresent()) {
       IndexedRecord record = recordOption.get();
       GenericRecord current = (GenericRecord) record;
 
-      List<Schema.Field> fieldList = schema.getFields();
+      List<Schema.Field> fieldList = writeSchema.getFields();
       GenericRecord last = (GenericRecord) currentValue;
       for (Schema.Field field : fieldList) {
         last.put(field.name(), current.get(field.name()));
@@ -51,4 +59,7 @@ public class PartialUpdatePayload extends OverwriteWithLatestAvroPayload {
     }
     return recordOption;
   }
+
+
+
 }

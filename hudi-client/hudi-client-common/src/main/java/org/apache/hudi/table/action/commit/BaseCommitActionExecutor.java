@@ -144,7 +144,7 @@ public abstract class BaseCommitActionExecutor<T extends HoodieRecordPayload, I,
   /**
    * By default, return the writer schema in Write Config for storing in commit.
    */
-  protected String getSchemaToStoreInCommit() {
+  protected String getSchemaToStoreInCommit() {//TODO 没有用
     if (config.updatePartialFields() && !StringUtils.isNullOrEmpty(config.getLastSchema())) {
       return config.getLastSchema();
     }
