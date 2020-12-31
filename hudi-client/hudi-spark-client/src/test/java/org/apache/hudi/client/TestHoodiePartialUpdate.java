@@ -33,7 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.apache.hudi.common.testutils.HoodieTestDataGenerator.*;
+import static org.apache.hudi.common.testutils.HoodieTestDataGenerator.AVRO_TRIP_SCHEMA;
+import static org.apache.hudi.common.testutils.HoodieTestDataGenerator.TRIP_SCHEMA;
 import static org.apache.hudi.common.testutils.Transformations.recordsToHoodieKeys;
 import static org.apache.hudi.common.util.ParquetUtils.readAvroRecords;
 import static org.apache.hudi.common.util.ParquetUtils.readAvroSchema;
@@ -80,56 +81,6 @@ public class TestHoodiePartialUpdate extends HoodieClientTestBase {
       assertEquals(String.valueOf(1L), record.get("timestamp").toString());
     }
   }
-
-
-  @Test
-  public void testCopyOnWritePartialUpdate1() {
-    final String testPartitionPath = "2016/09/26";
-    SparkRDDWriteClient client = getHoodieWriteClient(getConfig(true, false));
-    dataGen = new HoodieTestDataGenerator(new String[] {testPartitionPath});
-
-    String commitTime1 = "001";
-    client.startCommitWithTime(commitTime1);
-
-    List<HoodieRecord> inserts1 =
-            dataGen.generateInsertsStream(commitTime1, 100, false, TRIP_SCHEMA).collect(Collectors.toList()); // this writes ~500kb
-
-    List<HoodieKey> insertKeys = recordsToHoodieKeys(inserts1);
-    upsertAndCheck(client, insertKeys, commitTime1, false);
-
-    //client = getHoodieWriteClient(getConfig(true, false));
-    String commitTime2 = "002";
-    client.startCommitWithTime(commitTime2);
-
-    List<HoodieRecord> inserts2 =
-            dataGen.generateInsertsStream(commitTime2, 100, false, PARTIAL_TRIP_SCHEMA).collect(Collectors.toList()); // this writes ~500kb
-
-    List<HoodieKey> insertKeys_2 = recordsToHoodieKeys(inserts2);
-
-
-
-
-    WriteStatus writeStatus = upsertAndCheck(client, insertKeys_2, commitTime2, true);
-
-    Schema schema = readAvroSchema(hadoopConf, new Path(basePath, writeStatus.getStat().getPath()));
-    List<String> oldSchemaFieldNames = AVRO_TRIP_SCHEMA.getFields().stream().map(Schema.Field::name).collect(Collectors.toList());
-    List<String> parquetFieldNames = schema.getFields().stream().map(Schema.Field::name).collect(Collectors.toList());
-
-    for (String name : oldSchemaFieldNames) {
-      assertTrue(parquetFieldNames.contains(name));
-    }
-
-    List<GenericRecord> records1 = readAvroRecords(hadoopConf, new Path(basePath, writeStatus.getStat().getPath()));
-    for (GenericRecord record : records1) {
-      assertEquals("rider-" + commitTime2, record.get("rider").toString());
-      assertEquals("driver-" + commitTime2, record.get("driver").toString());
-      assertEquals(String.valueOf(1L), record.get("timestamp").toString());
-    }
-  }
-
-
-
-
 
   private WriteStatus upsertAndCheck(SparkRDDWriteClient client, List<HoodieKey> insertKeys, String commitTime, boolean partial) {
     List<HoodieRecord> records = new ArrayList<>();

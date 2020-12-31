@@ -67,19 +67,6 @@ public class OverwriteWithLatestAvroPayload extends BaseAvroPayload
       return Option.empty();
     }
     IndexedRecord indexedRecord = HoodieAvroUtils.bytesToAvro(recordBytes, schema);
-    //IndexedRecord indexedRecord1 = HoodieAvroUtils.bytesToAvro1(recordBytes, schema);
-    if (isDeleteRecord((GenericRecord) indexedRecord)) {
-      return Option.empty();
-    } else {
-      return Option.of(indexedRecord);
-    }
-  }
-
-  public Option<IndexedRecord> getInsertValue1(Schema schema) throws IOException {
-    if (recordBytes.length == 0) {
-      return Option.empty();
-    }
-    IndexedRecord indexedRecord = HoodieAvroUtils.bytesToAvro1(recordBytes, schema, schema);
     if (isDeleteRecord((GenericRecord) indexedRecord)) {
       return Option.empty();
     } else {

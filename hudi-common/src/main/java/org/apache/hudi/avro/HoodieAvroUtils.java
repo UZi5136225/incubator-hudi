@@ -127,26 +127,13 @@ public class HoodieAvroUtils {
     return bytesToAvro(bytes, schema, schema);
   }
 
-  public static GenericRecord bytesToAvro1(byte[] bytes, Schema schema) throws IOException {
-    return bytesToAvro1(bytes, schema, schema);
-  }
-
   /**
    * Convert serialized bytes back into avro record.
    */
   public static GenericRecord bytesToAvro(byte[] bytes, Schema writerSchema, Schema readerSchema) throws IOException {
-
     BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(bytes, reuseDecoder.get());
     reuseDecoder.set(decoder);
     GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema, readerSchema);
-    return reader.read(null, decoder);
-  }
-
-  public static GenericRecord bytesToAvro1(byte[] bytes, Schema writerSchema, Schema readerSchema) throws IOException {
-
-    BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(bytes, reuseDecoder.get());
-    reuseDecoder.set(decoder);
-    GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema, writerSchema);
     return reader.read(null, decoder);
   }
 

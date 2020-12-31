@@ -98,7 +98,7 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
   public static final String BULKINSERT_SORT_MODE = "hoodie.bulkinsert.sort.mode";
   public static final String DEFAULT_BULKINSERT_SORT_MODE = BulkInsertSortMode.GLOBAL_SORT
       .toString();
-
+  
   public static final String UPDATE_PARTIAL_FIELDS = "hoodie.update.partial.fields";
   public static final String DEFAULT_UPDATE_PARTIAL_FIELDS = "false";
 

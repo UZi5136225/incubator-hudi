@@ -95,16 +95,6 @@ public abstract class HoodieWriteHandle<T extends HoodieRecordPayload, I, K, O> 
   protected static Pair<Schema, Schema> getWriterSchemaIncludingAndExcludingMetadataPair(HoodieWriteConfig config, HoodieTable hoodieTable) {
     Schema originalSchema = new Schema.Parser().parse(config.getSchema());
     Schema hoodieSchema = HoodieAvroUtils.addMetadataFields(originalSchema);
-    boolean updatePartialFields = config.updatePartialFields();
-    if (updatePartialFields) {
-      try {
-        TableSchemaResolver resolver = new TableSchemaResolver(hoodieTable.getMetaClient());
-        Schema lastSchema = resolver.getTableAvroSchema();
-        config.setLastSchema(lastSchema.toString());
-      } catch (Exception e) {
-        // Ignore exception.
-      }
-    }
     return Pair.of(originalSchema, hoodieSchema);
   }
 
@@ -176,12 +166,11 @@ public abstract class HoodieWriteHandle<T extends HoodieRecordPayload, I, K, O> 
    * Rewrite the GenericRecord with the Schema containing the Hoodie Metadata fields.
    */
   protected GenericRecord rewriteRecord(GenericRecord record) {
-//    if (config.updatePartialFields() && !StringUtils.isNullOrEmpty(config.getLastSchema())) {
-//      return HoodieAvroUtils.rewriteRecord(record, new Schema.Parser().parse(config.getLastSchema()));
-//    } else {
-//      return HoodieAvroUtils.rewriteRecord(record, writerSchemaWithMetafields);
-//    }
-    return HoodieAvroUtils.rewriteRecord(record, writerSchemaWithMetafields);
+    if (config.updatePartialFields() && !StringUtils.isNullOrEmpty(config.getLastSchema())) {
+      return HoodieAvroUtils.rewriteRecord(record, new Schema.Parser().parse(config.getLastSchema()));
+    } else {
+      return HoodieAvroUtils.rewriteRecord(record, writerSchemaWithMetafields);
+    }
   }
 
   public abstract WriteStatus close();
@@ -207,12 +196,4 @@ public abstract class HoodieWriteHandle<T extends HoodieRecordPayload, I, K, O> 
     return taskContextSupplier.getAttemptIdSupplier().get();
   }
 
-  protected HoodieFileWriter createNewFileWriter(String instantTime, Path path, HoodieTable<T, I, K, O> hoodieTable,
-                                                 HoodieWriteConfig config, Schema schema, TaskContextSupplier taskContextSupplier) throws IOException {
-    /*if (config.updatePartialFields() && !StringUtils.isNullOrEmpty(config.getLastSchema())) {
-      return HoodieFileWriterFactory.getFileWriter(instantTime, path, hoodieTable, config, new Schema.Parser().parse(config.getLastSchema()), taskContextSupplier);
-    } else {*/
-      return HoodieFileWriterFactory.getFileWriter(instantTime, path, hoodieTable, config, schema, taskContextSupplier);
-    //}
-  }
 }
