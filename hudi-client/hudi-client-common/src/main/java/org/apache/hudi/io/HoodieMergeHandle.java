@@ -29,11 +29,9 @@ import org.apache.hudi.common.model.HoodieRecordPayload;
 import org.apache.hudi.common.model.HoodieWriteStat;
 import org.apache.hudi.common.model.HoodieWriteStat.RuntimeStats;
 import org.apache.hudi.common.model.IOType;
-import org.apache.hudi.common.table.TableSchemaResolver;
 import org.apache.hudi.common.util.DefaultSizeEstimator;
 import org.apache.hudi.common.util.HoodieRecordSizeEstimator;
 import org.apache.hudi.common.util.Option;
-import org.apache.hudi.common.util.StringUtils;
 import org.apache.hudi.common.util.collection.ExternalSpillableMap;
 import org.apache.hudi.config.HoodieWriteConfig;
 import org.apache.hudi.exception.HoodieCorruptedDataException;
@@ -42,7 +40,6 @@ import org.apache.hudi.exception.HoodieUpsertException;
 import org.apache.hudi.io.storage.HoodieFileReader;
 import org.apache.hudi.io.storage.HoodieFileReaderFactory;
 import org.apache.hudi.io.storage.HoodieFileWriter;
-import org.apache.hudi.io.storage.HoodieFileWriterFactory;
 import org.apache.hudi.table.HoodieTable;
 
 import org.apache.avro.Schema;
@@ -110,18 +107,6 @@ public class HoodieMergeHandle<T extends HoodieRecordPayload, I, K, O> extends H
    */
   private void init(String fileId, String partitionPath, HoodieBaseFile baseFileToMerge) {
     LOG.info("partitionPath:" + partitionPath + ", fileId to be merged:" + fileId);
-
-    boolean updatePartialFields = config.updatePartialFields();
-    if (updatePartialFields) {
-      try {
-        TableSchemaResolver resolver = new TableSchemaResolver(hoodieTable.getMetaClient());
-        Schema lastSchema = resolver.getTableAvroSchema();
-        config.setLastSchema(lastSchema.toString());
-      } catch (Exception e) {
-        LOG.error("Resolver last schema fail!");
-      }
-    }
-
     this.baseFileToMerge = baseFileToMerge;
     this.writtenRecordKeys = new HashSet<>();
     writeStatus.setStat(new HoodieWriteStat());
@@ -341,11 +326,6 @@ public class HoodieMergeHandle<T extends HoodieRecordPayload, I, K, O> extends H
               instantTime, writeStatus.getStat().getNumWrites(), writeStatus.getStat().getNumDeletes(),
               FSUtils.getCommitTime(oldFilePath.toString()), oldNumWrites));
     }
-  }
-
-  private HoodieFileWriter createNewFileWriter(String instantTime, Path path, HoodieTable<T, I, K, O> hoodieTable,
-                                                 HoodieWriteConfig config, Schema schema, TaskContextSupplier taskContextSupplier) throws IOException {
-      return HoodieFileWriterFactory.getFileWriter(instantTime, path, hoodieTable, config, schema, taskContextSupplier);
   }
 
   public Path getOldFilePath() {
