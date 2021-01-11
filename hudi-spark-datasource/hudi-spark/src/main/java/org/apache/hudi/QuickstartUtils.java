@@ -53,8 +53,11 @@ public class QuickstartUtils {
     private static final String DEFAULT_SECOND_PARTITION_PATH = "americas/brazil/sao_paulo";
     private static final String DEFAULT_THIRD_PARTITION_PATH = "asia/india/chennai";
 
-    private static final String[] DEFAULT_PARTITION_PATHS =
-        {DEFAULT_FIRST_PARTITION_PATH, DEFAULT_SECOND_PARTITION_PATH, DEFAULT_THIRD_PARTITION_PATH};
+//    private static final String[] DEFAULT_PARTITION_PATHS =
+//        {DEFAULT_FIRST_PARTITION_PATH, DEFAULT_SECOND_PARTITION_PATH, DEFAULT_THIRD_PARTITION_PATH};
+
+    private static final String[] DEFAULT_PARTITION_PATHS = {DEFAULT_FIRST_PARTITION_PATH};
+
     static String TRIP_EXAMPLE_SCHEMA = "{\"type\": \"record\",\"name\": \"triprec\",\"fields\": [ "
         + "{\"name\": \"ts\",\"type\": \"long\"},{\"name\": \"uuid\", \"type\": \"string\"},"
         + "{\"name\": \"rider\", \"type\": \"string\"},{\"name\": \"driver\", \"type\": \"string\"},"
@@ -145,11 +148,12 @@ public class QuickstartUtils {
 
       return IntStream.range(0, n).boxed().map(i -> {
         String partitionPath = partitionPaths[rand.nextInt(partitionPaths.length)];
-        HoodieKey key = new HoodieKey(UUID.randomUUID().toString(), partitionPath);
+        HoodieKey key = new HoodieKey( i.toString(), partitionPath);
         existingKeys.put(currSize + i, key);
         numExistingKeys++;
         try {
-          return new HoodieRecord(key, generateRandomValue(key, randomString));
+          //return new HoodieRecord(key, generateRandomValue(key, randomString));
+          return new HoodieRecord(key, generateRandomValue(key, i.toString()));
         } catch (IOException e) {
           throw new HoodieIOException(e.getMessage(), e);
         }
