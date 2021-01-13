@@ -138,6 +138,7 @@ public class QuickstartUtils {
     private static long generateRangeRandomTimestamp(int daysTillNow) {
       long maxIntervalMillis = daysTillNow * 24 * 60 * 60 * 1000L;
       return System.currentTimeMillis() - (long)(Math.random() * maxIntervalMillis);
+      //return daysTillNow;
     }
 
     /**
@@ -148,12 +149,12 @@ public class QuickstartUtils {
 
       return IntStream.range(0, n).boxed().map(i -> {
         String partitionPath = partitionPaths[rand.nextInt(partitionPaths.length)];
-        HoodieKey key = new HoodieKey( i.toString(), partitionPath);
+        HoodieKey key = new HoodieKey(i.toString(), partitionPath);
         existingKeys.put(currSize + i, key);
         numExistingKeys++;
         try {
-          //return new HoodieRecord(key, generateRandomValue(key, randomString));
-          return new HoodieRecord(key, generateRandomValue(key, i.toString()));
+          return new HoodieRecord(key, generateRandomValue(key, randomString));
+          //return new HoodieRecord(key, generateRandomValue(key, i.toString()));
         } catch (IOException e) {
           throw new HoodieIOException(e.getMessage(), e);
         }
